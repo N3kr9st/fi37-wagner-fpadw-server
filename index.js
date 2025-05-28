@@ -15,9 +15,9 @@ app.use(express.json())
  
 // CORS konfigurieren
 app.use(cors({
-    origin:'http://test.mshome.net:3000', // React-URL
-    //origin: '*', // Everything-URL
-    credentials: true // Erlaubt das Senden von Cookies, falls benötigt
+    origin:'http://test.mshome.net:3000', 
+    //origin: '*',
+    credentials: true 
 }));
 
 

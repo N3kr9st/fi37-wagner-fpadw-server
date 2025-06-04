@@ -86,11 +86,13 @@ router.post('/api/login', async (req, res) => {
         { error: 'Falsches Passwort' });
  
     const token = jwt.sign(
-        { id: user.id, username: user.username },
+        { id: user.userID, username: user.username },
         process.env.JWT_SECRET_KEY,
         { expiresIn: '1h' });
 
-    res.json({ token, userId: user.id });
+    res.json({ token, userId: user.userID, username: user.username });
+ 
+
 });
 
 

@@ -50,11 +50,30 @@ router.get('/recipe', async (req, res) => {
   }
 });
 
+router.get('/userRecipe', async (req, res) => {
+  let conn;
+  console.log("UserID:", req.query.userID);
+  try {
+    conn = await pool.getConnection();
+    const recipe = await conn.query('SELECT * FROM recipe where userID = ?', [req.query.userID]);
+    if (recipe.length === 0) {
+      return res.status(404).json({ error: 'Keine Rezepte gefunden' });
+    } 
+    return res.status(200).json(recipe);    
+  
+  } catch (err) {
+    console.log(err); 
+    res.status(500).json({ error: 'Database error' });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
 // Rezept mit Bild hinzufügen
 router.post('/addRecipe', upload.single('image'), async (req, res) => {
   const { name, preparation, ingredients } = req.body;
-  const userID = req.body.userID || "1";
-
+  const userID = req.body.userID ;
+  console.log("UserID:", userID);
   if (!name || !preparation || !ingredients) {
     return res.status(400).json({ error: 'Alle Felder werden benötigt' });
   }

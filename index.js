@@ -19,6 +19,7 @@ const app = express();
 const port = 3001
 app.use(express.json())
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/default_Image', express.static(path.join(__dirname, 'default_Image')));
 
 // CORS konfigurieren
 app.use(cors({

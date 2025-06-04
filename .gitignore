@@ -28,3 +28,4 @@ node_modules/
 .env.local
 .env.*.local
 uploads/amber-kipp-75715CVEJhI-unsplash (1)-1748935427505.jpg
+uploads/*

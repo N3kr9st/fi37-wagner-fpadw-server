@@ -13,7 +13,10 @@ router.get('/comments', async (req, res) => {
 
     try {
         conn = await pool.getConnection();
-        comments = await conn.query('SELECT * FROM comments');
+        comments = await conn.query('select comments.*, user.username from comments JOIN user on comments.userID = user.userID WHERE recipeID = ?', [req.query.recipeID || "1"]);
+        if (comments.length === 0) {
+            return res.status(404).json({ error: 'Keine Kommentare gefunden' });
+        }
         res.json(comments);
     } catch (err) {
         console.log(err);

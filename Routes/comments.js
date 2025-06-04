@@ -29,8 +29,8 @@ router.get('/comments', async (req, res) => {
 router.post('/addComment', async (req, res) => {
 
     const commentText  = req.body.comment;
-    const recipeID = req.body.recipeID || "1"; 
-    const userID = req.body.userID || "1"; 
+    const recipeID = req.body.recipeID ; 
+    const userID = req.body.userID ; 
     
 
 

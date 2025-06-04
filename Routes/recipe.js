@@ -1,50 +1,80 @@
-
 import express from 'express';
 import pool from '../db.js';
 import 'dotenv/config';
-
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 const router = express.Router();
 
+// Verzeichnis 'uploads' erstellen, falls es nicht existiert
+const uploadDir = 'uploads';
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
 
-router.get('/recipe', async (req, res) => {
-
-    let conn;
-    let recipe;
-
-    try {
-        conn = await pool.getConnection();
-        recipe = await conn.query('SELECT * FROM recipe');
-        res.json(recipe);
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({error: 'Database error'});
-    } finally {
-        conn.release();
-    }
-})
-
-router.post('/addRecipe', async (req, res) => {
-    const { name, preparation, ingredients } = req.body;
-    const userID = req.body.userID || "1"; 
-    console.log("userID:", req.body.userID);
-
-    if (!name || !preparation || !ingredients) {
-        return res.status(400).json({ error: 'Alle Felder werden benötigt' });
-    }
-
-    let conn;
-    try {
-        conn = await pool.getConnection();
-        const result = await conn.query('INSERT INTO recipe (userID,recipeTitle, zubereitung, zutaten) VALUES (?, ?, ?, ?)', [userID,name, preparation, ingredients]);
-        res.status(201).json({ message: 'Rezept erfolgreich hinzugefügt' });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Database error' });
-    } finally {
-        if (conn) conn.release();
-    }
+// Multer-Setup: speichert Bild in /uploads mit Originalname + Zeitstempel
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const basename = path.basename(file.originalname, ext);
+    cb(null, `${basename}-${Date.now()}${ext}`);
+  },
 });
 
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Nur Bilddateien erlaubt'), false);
+    }
+    cb(null, true);
+  },
+});
+
+router.get('/recipe', async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const recipe = await conn.query('SELECT * FROM recipe');
+    res.json(recipe);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Database error' });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// Rezept mit Bild hinzufügen
+router.post('/addRecipe', upload.single('image'), async (req, res) => {
+  const { name, preparation, ingredients } = req.body;
+  const userID = req.body.userID || "1";
+
+  if (!name || !preparation || !ingredients) {
+    return res.status(400).json({ error: 'Alle Felder werden benötigt' });
+  }
+
+  const imagePath = req.file ? req.file.path : null;
+
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const result = await conn.query(
+      'INSERT INTO recipe (userID, recipeTitle, zubereitung, zutaten, imagePath) VALUES (?, ?, ?, ?, ?)',
+      [userID, name, preparation, ingredients, imagePath]
+    );
+    res.status(201).json({ message: 'Rezept erfolgreich hinzugefügt' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Database error' });
+  } finally {
+    if (conn) conn.release();
+  }
+});
 
 export default router;

@@ -50,6 +50,27 @@ router.get('/recipe', async (req, res) => {
   }
 });
 
+router.delete('/deleteRecipe/:recipeID', async (req, res) => {
+  const recipeID = req.params.recipeID;
+  let conn;
+  try {
+    conn = await pool.getConnection();
+
+    const result = await conn.query('DELETE FROM recipe WHERE recipeID = ?', [recipeID]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Rezept nicht gefunden' });
+    }
+
+    res.status(200).json({ message: 'Rezept erfolgreich gelöscht' });
+  } catch (err) {
+    console.error('Fehler beim Löschen:', err);
+    res.status(500).json({ error: 'Datenbankfehler beim Löschen' });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
 router.get('/userRecipe', async (req, res) => {
   let conn;
   console.log("UserID:", req.query.userID);
@@ -69,7 +90,6 @@ router.get('/userRecipe', async (req, res) => {
   }
 });
 
-// Rezept mit Bild hinzufügen
 router.post('/addRecipe', upload.single('image'), async (req, res) => {
   const { name, preparation, ingredients } = req.body;
   const userID = req.body.userID ;
